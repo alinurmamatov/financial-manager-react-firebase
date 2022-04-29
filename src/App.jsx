@@ -1,10 +1,11 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import { Formik } from 'formik';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
 import {Form, FormGroup, Label, Input, FormFeedback, FormText, Col, Button, Container, Row, Card, CardBody, Table} from 'reactstrap';
-
+import { createTransaction } from './firebase/firebase';
+import { readTransaction } from './firebase/firebase';
 
 function App() {
   const [list, setList] = useState([]);
@@ -35,13 +36,28 @@ function App() {
 
   const onSubmit = (variables) => {
     setList([...list, variables]);
-    
+    let key = Math.random();
+    setListObj({
+      ...listObj,
+      [key]: variables
+    });
+    createTransaction(variables?.title, variables?.amount, variables?.type)
   }
 
   const onDelete = (transactionIndex) => {
     let filteredList = list.filter((item, index) => index !== transactionIndex);
     setList(filteredList);
   }
+
+  const callbackFunc = (data) => {
+    console.log(data, "transaction");
+    setListObj(data)
+  }
+
+  useEffect(() => {
+    readTransaction(callbackFunc)
+  }, [])
+
 
   return (
     <Container>
@@ -138,6 +154,18 @@ function App() {
               </tr>
             </thead>
             <tbody>
+              {
+                Object.keys(listObj).map((key) => (
+                  <tr key={key}>
+                    <td>{listObj[key]?.title}</td>
+                    <td>{listObj[key]?.amount}</td>
+                    <td>{listObj[key]?.type}</td>
+                    <td>
+                      <Button onClick={() => onDelete()}>Delete</Button>
+                    </td>
+                  </tr>
+                ))
+              }
               {
                 list.map((item, index) => (
                   <tr key={index}>

@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+import { getDatabase, set, ref, push, child, onValue, val } from "firebase/database";
 
 
 const firebaseConfig = {
@@ -15,3 +16,23 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
+
+export const readTransaction = (callback) => {
+    const db = getDatabase();
+    const starCounterRef = ref(db, "transactions");
+    onValue(starCounterRef, (snapshot) => {
+        const data = snapshot.val();
+        callback(data)
+    })
+} 
+
+export const createTransaction = (title, amount, type) => {
+    const db = getDatabase();
+    //let key = Math.floor(Math.random() * 1000000);
+    const key = push(child(ref(db), "transactions")).key;
+    set(ref(db, `transactions/${key}`), {
+        title,
+        amount, 
+        type
+    });
+}
