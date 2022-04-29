@@ -3,22 +3,25 @@ import './App.css';
 import { Formik } from 'formik';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import {Form, FormGroup, Label, Input, FormFeedback, FormText, Col, Button, Container, Row, Card, CardBody, Table} from 'reactstrap';
+import {Form, FormGroup, Label, Input, FormFeedback, FormText, Col, Button, Container, Row, Card, CardBody, Table, CardTitle} from 'reactstrap';
 import { createTransaction } from './firebase/firebase';
 import { readTransaction } from './firebase/firebase';
+import { deleteTransaction } from './firebase/firebase';
+import { updateTransaction } from './firebase/firebase';
 
 function App() {
   const [list, setList] = useState([]);
   const [listObj, setListObj] = useState({});
+  const [selectedTrnsc, setSelectedTrnsc] = useState(null);
 
   const transactionTypes = [
     {
       label: 'Income',
-      value: 'Income'
+      value: 'income'
     },
     {
       label: 'Expense',
-      value: 'Expense'
+      value: 'expense'
     }
   ]
 
@@ -35,22 +38,48 @@ function App() {
 
 
   const onSubmit = (variables) => {
-    setList([...list, variables]);
-    let key = Math.random();
-    setListObj({
-      ...listObj,
-      [key]: variables
-    });
-    createTransaction(variables?.title, variables?.amount, variables?.type)
+    if(selectedTrnsc){
+      updateTransaction(selectedTrnsc, variables?.title, variables?.amount, variables?.type);
+      setSelectedTrnsc(null)
+    } else {
+      createTransaction(variables?.title, variables?.amount, variables?.type);
+    }
   }
 
-  const onDelete = (transactionIndex) => {
-    let filteredList = list.filter((item, index) => index !== transactionIndex);
-    setList(filteredList);
+  const calcTotalIncome = () => {
+    let total = 0;
+    Object.keys(listObj).map((key) => {
+      if(listObj[key]?.type === 'income'){
+        total += listObj[key]?.amount;
+      }
+    })
+    return total;
+  }
+
+  const calcTotalExpense = () => {
+    let total = 0;
+    Object.keys(listObj).map((key) => {
+      if(listObj[key]?.type === 'expense'){
+        total -= listObj[key]?.amount;
+      }
+    })
+    return total;
+  }
+
+  const calcCurrentBalance = () => {
+    let total = 0;
+    Object.keys(listObj).map((key) => {
+      if(listObj[key]?.type === 'income'){
+        total += listObj[key]?.amount;
+      } else {
+        total -= listObj[key]?.amount;
+      }
+    })
+    return total;
   }
 
   const callbackFunc = (data) => {
-    console.log(data, "transaction");
+    // console.log(data, "transaction");
     setListObj(data)
   }
 
@@ -64,7 +93,7 @@ function App() {
       <Row>
         <Col>
           <Formik
-          initialValues={{ title: '', amount: '', type: 'Income' }}
+          initialValues={{ title: '', amount: '', type: 'income' }}
           validationSchema={TransactionSchema}
           onSubmit={onSubmit}
         >
@@ -136,7 +165,7 @@ function App() {
                   {errors?.type}
                 </FormFeedback>}
               </FormGroup>
-              <Button type="submit">Submit</Button>
+              <Button type="submit">{selectedTrnsc ? "Edit" : "Submit"}</Button>
             </Form>
           )}
           </Formik>
@@ -161,19 +190,8 @@ function App() {
                     <td>{listObj[key]?.amount}</td>
                     <td>{listObj[key]?.type}</td>
                     <td>
-                      <Button onClick={() => onDelete()}>Delete</Button>
-                    </td>
-                  </tr>
-                ))
-              }
-              {
-                list.map((item, index) => (
-                  <tr key={index}>
-                    <td>{item?.title}</td>
-                    <td>{item?.amount}</td>
-                    <td>{item?.type}</td>
-                    <td>
-                      <Button onClick={() => onDelete(index)}>Delete</Button>
+                      <Button onClick={() => deleteTransaction(key)}>Delete</Button>
+                      <Button onClick={() => setSelectedTrnsc(key)}>Edit</Button>
                     </td>
                   </tr>
                 ))
@@ -182,6 +200,29 @@ function App() {
           </Table>
           </CardBody>
         </Card>
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+              <Card>
+                  <CardTitle>
+                    Total Income: ${calcTotalIncome()}
+                  </CardTitle>
+              </Card>
+        </Col>
+        <Col>
+              <Card>
+                  <CardTitle>
+                    Total Expense: ${calcTotalExpense()}
+                  </CardTitle>
+              </Card>
+        </Col>
+        <Col>
+              <Card>
+                  <CardTitle>
+                    Current Balance: ${calcCurrentBalance()}
+                  </CardTitle>
+              </Card>
         </Col>
       </Row>
     </Container>

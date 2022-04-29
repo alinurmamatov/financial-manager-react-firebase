@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getDatabase, set, ref, push, child, onValue, val } from "firebase/database";
+import { getDatabase, set, ref, push, child, onValue, val, remove, update } from "firebase/database";
 
 
 const firebaseConfig = {
@@ -35,4 +35,18 @@ export const createTransaction = (title, amount, type) => {
         amount, 
         type
     });
+}
+
+export const deleteTransaction = (key) => {
+    const db = getDatabase();
+    remove(ref(db, `transactions/${key}`))
+}
+
+export const updateTransaction = (uid, title, amount, type) => {
+    const db = getDatabase();
+    let updates = {};
+    updates["/transactions/" + uid] = {
+        title, amount, type
+    };
+    update(ref(db), updates);
 }
