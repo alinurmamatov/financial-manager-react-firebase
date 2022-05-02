@@ -8,8 +8,11 @@ import { createTransaction } from './firebase/firebase';
 import { readTransaction } from './firebase/firebase';
 import { deleteTransaction } from './firebase/firebase';
 import { updateTransaction } from './firebase/firebase';
+import { signIn } from './firebase/firebase';
+import { getUserData } from './firebase/firebase';
 
 function App() {
+  const [user, setUser] = useState(null);
   const [list, setList] = useState([]);
   const [listObj, setListObj] = useState({});
   const [selectedTrnsc, setSelectedTrnsc] = useState(null);
@@ -36,6 +39,10 @@ function App() {
     type: Yup.string().required('Required'),
   });
 
+  const SignInSchema = Yup.object().shape({
+    email: Yup.string().email().required('Required'),
+    password: Yup.string().required('Required')
+  });
 
   const onSubmit = (variables) => {
     if(selectedTrnsc){
@@ -78,18 +85,26 @@ function App() {
     return total;
   }
 
+  const onSignIn = variables => {
+    signIn(variables?.email, variables?.password)
+  }
+
   const callbackFunc = (data) => {
     // console.log(data, "transaction");
     setListObj(data)
   }
 
   useEffect(() => {
-    readTransaction(callbackFunc)
+    setUser(getUserData())
+    readTransaction(callbackFunc);
   }, [])
 
 
   return (
     <Container>
+      <Row className='mt-4'>
+        <h6>Currently logged in with <u>{user?.currentUser?.email}</u> email.</h6>
+      </Row>
       <Row>
         <Col>
           <Formik
@@ -202,7 +217,7 @@ function App() {
         </Card>
         </Col>
       </Row>
-      <Row>
+      <Row className='mt-4'>
         <Col>
               <Card>
                   <CardTitle>
@@ -225,6 +240,65 @@ function App() {
               </Card>
         </Col>
       </Row>
+      {
+        !!!user&&(
+          <Row className='mt-4'>
+      <Formik
+          initialValues={{ email: '', password: '' }}
+          validationSchema={SignInSchema}
+          onSubmit={onSignIn}
+        >
+          {({
+            values,
+            errors,
+            touched,
+            handleChange,
+            handleBlur,
+            handleSubmit,
+            isSubmitting,
+          }) => (
+            <Form onSubmit={handleSubmit}>
+              <FormGroup>
+                <Label for="exampleEmail">
+                  Email
+                </Label>
+                <Input 
+                  type="email"
+                  name="email"
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  value={values.email}
+                  placeholder="email"
+                  invalid={errors.email && touched.email}/>
+                {errors.email && touched.email && 
+                  <FormFeedback tooltip>
+                    {errors?.email}
+                  </FormFeedback>}
+              </FormGroup>
+              <FormGroup>
+                <Label for="exampleEmail">
+                  Password
+                </Label>
+                <Input 
+                  type="password"
+                  name="password"
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  value={values.password}
+                  placeholder="password"
+                  invalid={errors.password && touched.password}/>
+                {errors.password && touched.password && 
+                <FormFeedback tooltip>
+                  {errors?.password}
+                </FormFeedback>}
+              </FormGroup>
+              <Button type="submit">{selectedTrnsc ? "Edit" : "Submit"}</Button>
+            </Form>
+          )}
+          </Formik>
+      </Row>
+        )
+      }
     </Container>
   );
 }

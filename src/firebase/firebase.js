@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getDatabase, set, ref, push, child, onValue, val, remove, update } from "firebase/database";
+import {getAuth, createUserWithEmailAndPassword} from 'firebase/auth'
 
 
 const firebaseConfig = {
@@ -49,4 +50,23 @@ export const updateTransaction = (uid, title, amount, type) => {
         title, amount, type
     };
     update(ref(db), updates);
+}
+
+export const signIn = (email, password) => {
+    const auth = getAuth();
+    createUserWithEmailAndPassword(auth, email, password)
+    .then((userCredential) => {
+        const user = userCredential.user;
+        console.log(user, 'user');
+    })
+    .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        alert(errorMessage);
+    });
+}
+
+export const getUserData = () => {
+    const auth = getAuth();
+    return auth;
 }
